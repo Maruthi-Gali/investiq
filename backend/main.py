@@ -1,26 +1,28 @@
-from fastapi import FastAPI
+from backend.app.main import app
 
-# Create the FastAPI application
-app = FastAPI(
-    title="InvestIQ API",
-    description="AI-powered Indian and US stock research platform",
-    version="0.1.0"
-)
+# from fastapi import FastAPI
 
-
-# Root endpoint
-@app.get("/")
-def home():
-    return {
-        "message": "Welcome to InvestIQ!",
-        "status": "running",
-        "markets": ["India", "US"]
-    }
+# # Create the FastAPI application
+# app = FastAPI(
+#     title="InvestIQ API",
+#     description="AI-powered Indian and US stock research platform",
+#     version="0.1.0"
+# )
 
 
-# Health-check endpoint
-@app.get("/health")
-def health_check():
-    return {
-        "status": "healthy"
-    }
+# # Root endpoint
+# @app.get("/")
+# def home():
+#     return {
+#         "message": "Welcome to InvestIQ!",
+#         "status": "running",
+#         "markets": ["India", "US"]
+#     }
+
+
+# # Health-check endpoint
+# @app.get("/health")
+# def health_check():
+#     return {
+#         "status": "healthy"
+#     }

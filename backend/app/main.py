@@ -1,27 +1,38 @@
 from fastapi import FastAPI
 
-from backend.app.api.routes import health
+from backend.app.api.routes import (
+    health,
+    companies,
+    market_symbols,
+)
+from backend.app.core.config import get_settings
 
+
+settings = get_settings()
 
 app = FastAPI(
-    title="InvestIQ API",
+    title=settings.APP_NAME,
     description=(
         "AI-powered investment research platform "
         "for Indian and US stock markets."
     ),
-    version="0.1.0"
+    version=settings.APP_VERSION,
+    debug=settings.DEBUG
 )
 
 
-# Register API routers
 app.include_router(health.router)
+app.include_router(companies.router)
+app.include_router(market_symbols.router)
+
 
 
 @app.get("/", tags=["General"])
 def home():
     return {
-        "message": "Welcome to InvestIQ!",
+        "message": f"Welcome to {settings.APP_NAME}!",
         "status": "running",
         "markets": ["India", "US"],
-        "version": "0.1.0"
+        "version": settings.APP_VERSION,
+        "environment": settings.APP_ENV
     }

@@ -1,10 +1,15 @@
+import logging
 from uuid import UUID
 
 from sqlalchemy import select, func
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from backend.app.models import Company
 from backend.app.schemas import CompanyCreate
+
+
+logger = logging.getLogger(__name__)
 
 
 def create_company(
@@ -27,9 +32,19 @@ def create_company(
         ),
     )
 
-    db.add(company)
-    db.commit()
-    db.refresh(company)
+    try:
+        db.add(company)
+        db.commit()
+        db.refresh(company)
+        logger.info(
+            "Company created successfully: company_id=%s, name=%s",
+            company.id,
+            company.name,
+        )
+
+    except SQLAlchemyError:
+        db.rollback()
+        raise
 
     return company
 
@@ -118,7 +133,16 @@ def delete_company(
     if company is None:
         return False
 
-    db.delete(company)
-    db.commit()
+    try:
+        db.delete(company)
+        db.commit()
+        logger.info(
+            "Company deleted successfully: company_id=%s",
+            company_id,
+        )
+
+    except SQLAlchemyError:
+        db.rollback()
+        raise
 
     return True

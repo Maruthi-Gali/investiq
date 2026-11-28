@@ -346,3 +346,62 @@ def test_update_nonexistent_market_symbol_returns_404(client):
     )
 
     assert response.status_code == 404
+
+
+
+def test_india_market_rejects_usd_currency(client):
+    company_id = create_test_company(client)
+
+    response = client.post(
+        "/api/v1/market-symbols/",
+        json={
+            "company_id": company_id,
+            "market": "INDIA",
+            "exchange": "NSE",
+            "symbol": "RELIANCE",
+            "currency": "USD",
+        },
+    )
+
+    assert response.status_code == 422
+
+
+
+def test_us_market_rejects_inr_currency(client):
+    company_id = create_test_company(client)
+
+    response = client.post(
+        "/api/v1/market-symbols/",
+        json={
+            "company_id": company_id,
+            "market": "US",
+            "exchange": "NASDAQ",
+            "symbol": "AAPL",
+            "currency": "INR",
+        },
+    )
+
+    assert response.status_code == 422
+
+
+
+def test_updating_market_rejects_incompatible_existing_currency(client):
+    company_id = create_test_company(client)
+
+    symbol_id = create_test_market_symbol(
+        client,
+        company_id,
+        market="INDIA",
+        exchange="NSE",
+        symbol="TCS",
+        currency="INR",
+    )
+
+    response = client.put(
+        f"/api/v1/market-symbols/{symbol_id}",
+        json={
+            "market": "US",
+        },
+    )
+
+    assert response.status_code == 422

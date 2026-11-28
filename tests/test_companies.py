@@ -32,7 +32,12 @@ def test_get_company_not_found(client):
     )
 
     assert response.status_code == 404
+    data = response.json()
 
+    assert data["success"] is False
+    assert data["error"]["code"] == "HTTP_404"
+    assert data["error"]["message"] == "Company not found"
+    assert data["error"]["details"] is None
 
 def test_create_company_with_missing_name_returns_422(client):
     payload = {
@@ -47,6 +52,12 @@ def test_create_company_with_missing_name_returns_422(client):
     )
 
     assert response.status_code == 422
+    data = response.json()
+
+    assert data["success"] is False
+    assert data["error"]["code"] == "VALIDATION_ERROR"
+    assert data["error"]["message"] == "Request validation failed"
+    assert isinstance(data["error"]["details"], list)
 
 
 def test_create_company_with_invalid_country_code_returns_422(client):

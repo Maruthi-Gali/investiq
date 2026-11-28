@@ -1,3 +1,5 @@
+import logging
+from sqlalchemy.exc import SQLAlchemyError
 from uuid import UUID
 
 from sqlalchemy import select
@@ -9,6 +11,7 @@ from backend.app.schemas import (
     MarketSymbolUpdate,
 )
 
+logger = logging.getLogger(__name__)
 
 def create_market_symbol(
     db: Session,
@@ -28,9 +31,22 @@ def create_market_symbol(
         currency=symbol_data.currency.upper(),
     )
 
-    db.add(market_symbol)
-    db.commit()
-    db.refresh(market_symbol)
+    try:
+        db.add(market_symbol)
+        db.commit()
+        db.refresh(market_symbol)
+        logger.info(
+            "Market symbol created successfully: "
+            "symbol_id=%s, market=%s, exchange=%s, symbol=%s",
+            market_symbol.id,
+            market_symbol.market,
+            market_symbol.exchange,
+            market_symbol.symbol,
+        )
+
+    except SQLAlchemyError:
+        db.rollback()
+        raise
 
     return market_symbol
 
@@ -87,6 +103,29 @@ def update_market_symbol(
 
     update_data = symbol_data.model_dump(exclude_unset=True)
 
+    # Validate the final market and currency combination.
+    final_market = update_data.get(
+        "market",
+        market_symbol.market,
+    )
+
+    final_currency = update_data.get(
+        "currency",
+        market_symbol.currency,
+    )
+
+    expected_currency = {
+        "INDIA": "INR",
+        "US": "USD",
+    }
+
+    required_currency = expected_currency.get(final_market)
+
+    if required_currency is None or final_currency != required_currency:
+        raise ValueError(
+            f"Invalid currency for market {final_market}"
+        )
+
     for field, value in update_data.items():
         if value is not None:
             setattr(
@@ -95,8 +134,21 @@ def update_market_symbol(
                 value.upper(),
             )
 
-    db.commit()
-    db.refresh(market_symbol)
+    try:
+        db.commit()
+        db.refresh(market_symbol)
+        logger.info(
+            "Market symbol updated successfully: "
+            "symbol_id=%s, market=%s, exchange=%s, symbol=%s",
+            market_symbol.id,
+            market_symbol.market,
+            market_symbol.exchange,
+            market_symbol.symbol,
+        )
+
+    except SQLAlchemyError:
+        db.rollback()
+        raise
 
     return market_symbol
 
@@ -111,7 +163,20 @@ def delete_market_symbol(
     if market_symbol is None:
         return False
 
-    db.delete(market_symbol)
-    db.commit()
+    try:
+        db.delete(market_symbol)
+        db.commit()
+        logger.info(
+            "Market symbol deleted successfully: "
+            "symbol_id=%s, market=%s, exchange=%s, symbol=%s",
+            market_symbol.id,
+            market_symbol.market,
+            market_symbol.exchange,
+            market_symbol.symbol,
+        )
+
+    except SQLAlchemyError:
+        db.rollback()
+        raise
 
     return True

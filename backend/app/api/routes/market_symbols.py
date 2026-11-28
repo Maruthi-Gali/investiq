@@ -112,6 +112,12 @@ def update_market_symbol(
 
         return market_symbol
 
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        )
+
     except IntegrityError:
         db.rollback()
         raise HTTPException(

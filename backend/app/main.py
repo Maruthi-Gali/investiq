@@ -1,11 +1,35 @@
 from fastapi import FastAPI
-
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from backend.app.exceptions.handlers import (
+    http_exception_handler,
+    validation_exception_handler,
+)
 from backend.app.api.routes import (
     health,
     companies,
     market_symbols,
 )
 from backend.app.core.config import get_settings
+import logging
+
+from contextlib import asynccontextmanager
+
+from backend.app.core.logging_config import setup_logging
+
+
+setup_logging()
+
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("InvestIQ application starting")
+
+    yield
+
+    logger.info("InvestIQ application shutting down")
 
 
 settings = get_settings()
@@ -17,9 +41,19 @@ app = FastAPI(
         "for Indian and US stock markets."
     ),
     version=settings.APP_VERSION,
-    debug=settings.DEBUG
+    debug=settings.DEBUG,
+    lifespan=lifespan,
 )
 
+app.add_exception_handler(
+    StarletteHTTPException,
+    http_exception_handler,
+)
+
+app.add_exception_handler(
+    RequestValidationError,
+    validation_exception_handler,
+)
 
 app.include_router(health.router)
 app.include_router(companies.router)
